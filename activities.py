@@ -7,7 +7,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from temporalio import activity
-from temporalio.exceptions import ApplicationError
 
 from models import LLMCallInput, PDFGenerationInput
 
@@ -62,7 +61,7 @@ def send_email() -> str:
 
     # This simulates a temporary failure - maybe a database is down,
     # or an API is temporarily unavailable
-    raise ApplicationError("Simulated failure: Email service temporarily unavailable")
+    # raise ApplicationError("Simulated failure: Email service temporarily unavailable")
 
     # This code would run if we remove the error above
     return "Email sent"

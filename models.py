@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 
 
 @dataclass
@@ -15,3 +16,15 @@ class PDFGenerationInput:
 @dataclass
 class GenerateReportInput:
     prompt: str
+
+
+class UserDecision(StrEnum):
+    KEEP = "KEEP"
+    EDIT = "EDIT"
+    WAIT = "WAIT"
+
+
+@dataclass
+class UserDecisionSignal:
+    decision: UserDecision
+    additional_prompt: str = ""
