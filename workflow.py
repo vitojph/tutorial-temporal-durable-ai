@@ -4,7 +4,7 @@ from temporalio import workflow
 from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
-    from activities import create_pdf, llm_call
+    from activities import create_pdf, llm_call, send_email
     from models import (
         GenerateReportInput,
         LLMCallInput,
@@ -38,6 +38,17 @@ class GenerateReportWorkflow:
         pdf_filename = await workflow.execute_activity(
             create_pdf,
             pdf_generation_input,
+            start_to_close_timeout=timedelta(seconds=20),
+            retry_policy=RetryPolicy(
+                initial_interval=timedelta(seconds=1),
+                maximum_attempts=3,
+                backoff_coefficient=3.0,
+            ),
+        )
+
+        # step 3 send an temporalio
+        _email_sent = await workflow.execute_activity(
+            send_email,
             start_to_close_timeout=timedelta(seconds=20),
             retry_policy=RetryPolicy(
                 initial_interval=timedelta(seconds=1),

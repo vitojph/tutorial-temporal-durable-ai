@@ -4,7 +4,7 @@ import concurrent.futures
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from activities import create_pdf, llm_call
+from activities import create_pdf, llm_call, send_email
 from workflow import GenerateReportWorkflow
 
 
@@ -18,7 +18,11 @@ async def run_worker():
             client,
             task_queue="tutorial",  # Task queue that your Worker is listening to.
             workflows=[GenerateReportWorkflow],  # Register the Workflow on your Worker
-            activities=[llm_call, create_pdf],  # Register the Activities on your Worker
+            activities=[
+                llm_call,
+                create_pdf,
+                send_email,
+            ],  # Register the Activities on your Worker
             activity_executor=activity_executor,  # Thread pool that allows Activities to run concurrently
         )
 
