@@ -1,19 +1,23 @@
 import os
+
 from dotenv import load_dotenv
 from litellm import completion
 from litellm.types.utils import ModelResponse
-from models import LLMCallInput
-from models import LLMCallInput, PDFGenerationInput
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from temporalio import activity
 
-load_dotenv(override=True) # Reads your .env file and loads your environment variables
+from models import LLMCallInput, PDFGenerationInput
+
+load_dotenv(override=True)  # Reads your .env file and loads your environment variables
 
 # Get LLM_API_KEY environment variable
-LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o")
+LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-5.6-luna")
 LLM_API_KEY = os.getenv("LLM_API_KEY", None)
 
+
+@activity.defn
 def llm_call(input: LLMCallInput) -> ModelResponse:
     return completion(
         model=LLM_MODEL,
@@ -21,6 +25,8 @@ def llm_call(input: LLMCallInput) -> ModelResponse:
         messages=[{"content": input.prompt, "role": "user"}],
     )
 
+
+@activity.defn
 def create_pdf(input: PDFGenerationInput) -> str:
     doc = SimpleDocTemplate(input.filename, pagesize=letter)
 
@@ -47,15 +53,3 @@ def create_pdf(input: PDFGenerationInput) -> str:
 
     doc.build(story)
     return input.filename
-
-# Make the API call
-print("Welcome to the Research Report Generator!")
-prompt = input("Enter your research topic or question: ")
-llm_input = LLMCallInput(prompt=prompt)
-result = llm_call(llm_input)
-
-# Extract the text content
-content = result.choices[0].message.content
-print(content)
-
-pdf_filename = create_pdf(PDFGenerationInput(content=content, filename="research_report.pdf"))

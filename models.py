@@ -1,13 +1,16 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class LLMCallInput:
     prompt: str
 
+
 @dataclass
 class PDFGenerationInput:
     content: str
-    filename: str = "research_pdf.pdf"
+    filename: str = "final_report.pdf"
+
 
 @dataclass
 class GenerateReportInput:
