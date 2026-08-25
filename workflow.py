@@ -19,6 +19,7 @@ with workflow.unsafe.imports_passed_through():
 class GenerateReportWorkflow:
     def __init__(self) -> None:
         self._current_prompt: str = ""
+        self._research_result: str = ""
         self._user_decision: UserDecisionSignal = UserDecisionSignal(
             decision=UserDecision.WAIT
         )
@@ -26,6 +27,10 @@ class GenerateReportWorkflow:
     @workflow.signal
     async def user_decision_signal(self, decision_data: UserDecisionSignal) -> None:
         self._user_decision = decision_data
+
+    @workflow.query
+    def get_research_result(self) -> str:
+        return self._research_result
 
     @workflow.run
     async def run(self, input: GenerateReportInput) -> str:
@@ -41,6 +46,7 @@ class GenerateReportWorkflow:
                 llm_call_input,
                 start_to_close_timeout=timedelta(seconds=30),
             )
+            self._research_result = research_facts["choices"][0]["message"]["content"]
 
             # Waiting for Signal with user decision
             await workflow.wait_condition(

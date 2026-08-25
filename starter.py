@@ -7,38 +7,48 @@ from models import GenerateReportInput, UserDecision, UserDecisionSignal
 from workflow import GenerateReportWorkflow  # Your Workflow definition
 
 
-async def send_user_decision_signal(client: Client, workflow_id: str):
-    # Get handle to the Workflow Execution
+async def send_user_decision(client: Client, workflow_id: str):
     handle = client.get_workflow_handle(workflow_id)
 
     while True:
-        print("\n" + "=" * 80)
-        print("Calling LLM! Check the Web UI for the research output.")
-        print("Would you like to keep or edit it?")
-        print("1. Type 'keep' to approve the output and create PDF")
-        print("2. Type 'edit' to modify the output")
-        print("=" * 80)
+        print("\n" + "=" * 50)
+        print("Research is complete!")
+        print("1. Type 'query' to view the current research result")
+        print("2. Type 'keep' to approve the research and create PDF")
+        print("3. Type 'edit' to modify the research")
+        print("=" * 50)
 
-        decision = input("Your decision (keep/edit): ").strip().lower()
+        decision = input("Your decision (query/keep/edit): ").strip().lower()
 
-        if decision in {"keep", "1"}:
+        if decision in {"query", "1"}:
+            await query_research_result(client, workflow_id)
+        elif decision in {"keep", "2"}:
             signal_data = UserDecisionSignal(decision=UserDecision.KEEP)
             await handle.signal("user_decision_signal", signal_data)
-            print("Signal sent to keep output and create PDF")
+            print("Signal sent to keep research and create PDF")
             break
-
-        elif decision in {"edit", "2"}:
-            additional_prompt = input(
-                "Enter additional instructions (optional): "
-            ).strip()
+        elif decision in {"edit", "3"}:
+            additional_prompt = input("Enter new instructions (optional): ").strip()
             signal_data = UserDecisionSignal(
                 decision=UserDecision.EDIT, additional_prompt=additional_prompt
             )
             await handle.signal("user_decision_signal", signal_data)
-            print("Signal sent to regenerate output")
-
+            print("Signal sent to regenerate research")
         else:
-            print("Please enter either 'keep' or 'edit'")
+            print("Please enter either 'keep', 'edit', or 'query'")
+
+
+async def query_research_result(client: Client, workflow_id: str):
+    handle = client.get_workflow_handle(workflow_id)
+
+    try:
+        research_result = await handle.query(GenerateReportWorkflow.get_research_result)
+        if research_result:
+            print(f"\nResearch Result:\n{research_result}\n")
+        else:
+            print("Research Result: Not yet available")
+    except Exception as e:
+        print(f"Query failed: {e}")
 
 
 async def main():
@@ -64,7 +74,7 @@ async def main():
         task_queue="tutorial",  # task queue your Worker is polling
     )
 
-    _signal_task = asyncio.create_task(send_user_decision_signal(client, handle.id))
+    _signal_task = asyncio.create_task(send_user_decision(client, handle.id))
 
     print(f"Started workflow. Workflow ID: {handle.id}, RunID {handle.result_run_id}")
     result = await handle.result()
